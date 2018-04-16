@@ -1,0 +1,88 @@
+//Hilda R Martin
+#include <Stdlib.h>
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+#include <math.h>
+//  object
+TinyGPSPlus gps;
+static const int RX = 2, TX = 1;
+static const uint32_t GPSBaud = 9600;
+
+// serial connection 
+SoftwareSerial ss(RX, TX);
+
+void setup()
+{
+  Serial.begin(115200);
+  ss.begin(GPSBaud);
+  Serial.println("Working");
+  
+}
+char inChar = 0;
+float lat, lon;
+String message = "I am working";
+String str;
+float baseLat = 34.066467;
+float baseLon = 106.907341;
+float thresholdDistance = 10; //meters
+
+
+
+
+
+void loop()
+{
+  // This sketch displays information every time a new sentence is correctly encoded.
+  while (ss.available() > 0)
+    if (gps.encode(ss.read()))
+      displayInfo();
+
+  if (millis() > 1000 && gps.charsProcessed() < 10)
+  {
+    Serial.println(F("No GPS devise"));
+    while(true);
+  }
+}
+void displayInfo()
+{
+  Serial.print("Position: ");
+  Serial.print("lat: "); Serial.print(lat, 6); Serial.print(" ");// print latitude
+  Serial.print("lon: "); Serial.println(lon, 6); // print longitude
+} //end displayInfo()
+
+
+void checkDist(float ltd , float lon)
+{
+
+   float dist = HaverSine(baseLat,baseLon,ltd,lon);
+  
+  if (dist >= thresholdDistance )
+  {
+    
+    Serial.print("Subject is ");
+    Serial.print(dist - thresholdDistance, 6);
+    Serial.println("meters beyond limits");   
+  }
+else
+  {
+        Serial.println("Drone within limits");
+  }
+}
+float HaverSine(float lat1, float lon1, float lat2, float lon2)
+{
+ float ToRad = PI / 180.0;
+ float R = 6371000.0;   // radius earth in meters
+ 
+ float dLat = (lat2-lat1) * ToRad;
+ float dLon = (lon2-lon1) * ToRad; 
+ 
+ float a = sin(dLat/2) * sin(dLat/2) +
+       cos(lat1 * ToRad) * cos(lat2 * ToRad) * 
+       sin(dLon/2) * sin(dLon/2); 
+       
+ float c = 2 * atan2(sqrt(a), sqrt(1-a)); 
+ 
+ float d = R * c;
+ Serial.print(d, 6);
+ return d;
+}
